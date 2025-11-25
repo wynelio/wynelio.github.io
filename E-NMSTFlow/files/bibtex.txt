@@ -1,0 +1,6 @@
+@article{liu2025enmstflow,
+  title={Nonlinear Motion-Guided and Spatio-Temporal Aware Network for Unsupervised Event-Based Optical Flow},
+  author={Liu, Zuntao and Zhuang, Hao and Jiang, Junjie and Song, Yuhang and Fang, Zheng},
+  booktitle={arXiv preprint arxiv:2505.05089},
+  year={2025}
+}

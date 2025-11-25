@@ -1,0 +1,1022 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="description" content="A Vision-Language Model with Memory for spatial reasoning from only video inputs.">
+    <meta name="keywords" content="VLM2">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VLM2: Vision-Language Memory for Spatial Reasoning</title>
+
+    <link rel="icon" type="image/x-icon" href="static/images/logo.png">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+    <link rel="icon" type="image/x-icon" href="static/images/android-chrome-512x512.png">
+    <link href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.19.0/tabler-icons-outline.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <link rel="stylesheet" href="./static/css/index.css">
+    
+    <style>
+        .center-image {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .blend-img-item {
+            background: #f5f5f5;
+        }
+
+        .item {
+            margin: 10px;
+        }
+
+        .blend-img-background {
+            mix-blend-mode: multiply;
+        }
+
+        #interactive {
+            position: relative;
+            display: inline-block;
+            width: 768px;
+            aspect-ratio: 16/9;
+            max-width: 100%;
+            border: 2px solid #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 0 4px #000;
+
+        }
+
+        #interactive canvas,
+        #interactive #glfailed,
+        #interactive #loading {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #interactive #glfailed {
+            color: #f88;
+            background: black;
+            display: none;
+        }
+
+        #interactive #loading {
+            color: #000;
+            font-size: 32px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+        }
+
+        .iframe-container {
+            width: 50%;
+            max-width: 32em;
+        }
+
+        .vframe {
+            border-radius: 0.5em;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 32 / 27.5;
+            max-width: 32em;
+            max-height: 27.5em;
+            border: none;
+            box-shadow: 0 0 1em 0em rgba(0, 0, 0, 0.15);
+        }
+
+        .large-vframe {
+            border-radius: 0.5em;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 32 / 18;
+            max-width: 64em;
+            max-height: 36em;
+            border: none;
+            box-shadow: 0 0 1em 0em rgba(0, 0, 0, 0.15);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 0;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .modelviewer-container {
+            width: 50%;
+            max-width: 32em;
+        }
+
+        model-viewer {
+            border-radius: 0.5em;
+            width: 100%;
+            max-width: 32em;
+            max-height: 27.5em;
+            height: auto;
+            aspect-ratio: 32 / 27.5;
+            border: none;
+            box-shadow: 0 0 1em 0em rgba(0, 0, 0, 0.15);
+        }
+
+        .siframe-class {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            gap: 1vw;
+            padding: 1vw;
+            align-items: start;
+        }
+
+        .siframe-class .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 1vw;
+            flex: 1 0 40%;
+            max-width: 384px;
+        }
+
+        .siframe-class .image-grid img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+
+        .siframe-class .iframe-container {
+            flex: 1 0 60%;
+            max-width: 640px;
+        }
+
+        .siframe-class iframe {
+            width: 100%;
+            border-radius: 0.5em;
+            max-width: 640px;
+            height: auto;
+            aspect-ratio: 5 / 4;
+            border: none;
+            box-shadow: 0 0 1em 0em rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+
+            .large-vframe {
+                width: 100%;
+            }
+
+            .iframe-container {
+                width: 100%;
+            }
+
+            model-viewer {
+                max-width: 100%;
+                margin: 0 auto;
+            }
+        }
+
+        .load img {
+            width: 100px;
+            height: 70px;
+            object-fit: cover;
+            margin: 4px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 4px #888;
+            border-radius: 6px;
+            vertical-align: bottom;
+        }
+
+        .load img:active {
+            box-shadow: 0 0 4px #000;
+            opacity: .8;
+        }
+
+        .megabuttons {
+            position: absolute;
+            left: 5px;
+            bottom: 5px;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        nav {
+            text-align: center;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            width: 100%;
+            gap: 10px;
+        }
+
+        nav ul li {
+            flex: 1;
+            display: flex;
+            margin: 0;
+        }
+
+        nav ul li a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+            color: #363636;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            min-height: 50px;
+            flex-grow: 1;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+
+        nav ul li a:hover {
+            background-color: #e4e4e4;
+            transform: scale(1.05);
+        }
+
+        nav ul li a:active {
+            background-color: #d3d3d3;
+            transform: scale(0.95);
+        }
+
+        nav ul li a.active {
+            background-color: #cccccc; /* Change color to indicate active tab */
+            color: #000000; /* Optional: Change text color if needed */
+        }
+
+
+        .dynamic-section {
+            display: none;
+            padding: 1rem 0;
+        }
+
+
+
+        .grid-container-2x6 {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(2, auto);
+            gap: 10px;
+            padding: 20px;
+            max-width: 80%;
+            margin: auto;
+        }
+
+        .grid-container-2x6 img {
+            width: 100%;
+            height: auto;
+        }
+
+        .grid-container-1x6 {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(1, auto);
+            gap: 10px;
+            padding: 20px;
+            max-width: 80%;
+            margin: auto;
+        }
+
+        .grid-container-1x6 img {
+            width: 100%;
+            height: auto;
+        }
+
+        .panel-style {
+            background-color: #fafafa;
+            padding: 20px;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered" style="margin-bottom: 0em">
+          <div class="column is-max-desktop has-text-centered">
+            <h1 class="title is-1 publication-title" style="margin-bottom: 1rem">
+              <img src="static/images/logo.png" alt="ICON" 
+                style="max-width: 86px; vertical-align: middle;">
+              <strong>VLM<sup>2</sup>: Vision-Language Memory for Spatial Reasoning</strong>
+          </h1>
+        </div>
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-four-fifths has-text-centered">
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://wynelio.github.io/">Zuntao Liu</a><sup>1</sup></span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span class="author-block">
+              <a href="https://sairlab.org/yid/">Yi Du</a><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+            <span class="author-block">
+              <a href="https://sairlab.org/taimengf/">Taimeng Fu</a><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+            <span class="author-block">
+              <a href="https://sairlab.org/shaoshus/">Shaoshu Su</a><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+            <span class="author-block">
+              <a href="https://cherieho.com/">Cherie Ho</a><sup>2</sup>&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+            <span class="author-block">
+              <a href="https://sairlab.org/chenw/">Chen Wang</a><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+      </div>
+
+        <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>Spatial AI & Robotics (SAIR) Lab, University at Buffalo </span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <span class="author-block"><sup>2</sup>Stanford University</span>
+        </div>
+
+        <div class="column has-text-centered">
+          <div class="publication-links">
+            <span class="link-block">
+              <a href="http://arxiv.org/abs/xxxxx" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+              </a>
+          </span>
+
+          <span class="link-block">
+              <a href="http://arxiv.org/abs/xxxxx" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="ai ai-arxiv"></i></span>
+              <span>arXiv</span>
+              </a>
+            </span>
+
+            <span class="link-block">
+            <a href="./files/bibtex.txt" class="external-link button is-normal is-rounded is-dark">
+              <span class="icon"><i class="fas fa-bookmark"></i></span>
+              <span>BibTex</span>
+            </a>
+            </span>
+          </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="hero teaser">
+        <div class="container fluid">
+            <div class="hero-body is-max-widescreen">
+                <div class="columns is-centered">
+                    <div class="column is-centered is-full">
+                        <div class="notification is-centered is-info is-rounded"
+                          style="text-align: center; padding-bottom: 5px; padding-top: 5px; background-color: #ffffff;">
+                          <h6 style="text-align: center; color:rgb(0, 0, 0); font-size: 18px">
+                          <strong>TL;DR:</strong> A <u><b>V</b></u>ision-<u><b>L</b></u>anguage <u><b>M</b></u>odel with <u><b>M</b></u>emory for spatial reasoning from only
+                              video inputs.
+                          </h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="image-container">
+                    <img src="static/images/cover.png"  alt="Cover" class="full-width-image">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section has-background-light">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Abstract</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                          Spatial reasoning is a critical capability for intelligent robots, 
+                          yet current vision-language models (VLMs) still fall short of human-level 
+                          performance in video-based spatial reasoning. This gap mainly stems from two 
+                          challenges: a semantic-geometric misalignment that prevents consistent 3D 
+                          understanding, and the absence of persistent memory to retain 3D representation 
+                          and understanding over time. 
+                          To address these limitations, we present <strong>VLM<sup>2</sup></strong>, a <strong>V</strong>ision-<strong>L</strong>anguage <strong>M</strong>odel 
+                          with persistent <strong>M</strong>emory for spatial reasoning with a view-consistent, 
+                          3D-aware representation purely from 2D video.
+                          Specifically, to enhance long-horizon reasoning, we incorporate a 
+                          dual-memory module, consisting of a working memory that operates as 
+                          a sliding window to focus on immediate context, and an episodic memory 
+                          that consolidates and stores critical long-term information. This design 
+                          enables efficient and long-horizon spatial reasoning with a fixed computational 
+                          cost. Extensive experiments on multiple benchmarks show that VLM<sup>2</sup> achieves 
+                          state-of-the-art performance among video-only models, significantly advancing 
+                          the frontier of visual-spatial intelligence.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div><br>
+    </section>
+
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Method</h2>
+                    <div class="content has-text-justified">         
+                      <p>
+                        VLM<sup>2</sup> constructs a view-consistent 3D-aware representation via 
+                        adaptive 3D position injection, 
+                        viewpoint-aware geometry alignment and semantic-geometric fusion. 
+                        A dual-memory module with a sliding-window working memory and 
+                        a fixed-capacity episodic memory maintains these representations over time, 
+                        supporting long-horizon spatial reasoning.
+                      </p>
+                    </div>
+                    <div class="image-container">
+                        <img src="static/images/pipeline.png"  alt="Cover" class="full-width-image">
+                    </div>
+                </div>
+            </div>
+        </div><br>
+    </section>
+
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">VSI-Bench</h2>
+                    <div class="content has-text-justified">         
+                        <p>
+                        Comparison with proprietary models, open-sourced VLMs, and spatial-enhanced models 
+                        specifically designed for spatial reasoning on the VSI-Bench. 
+                        Our VLM<sup>2</sup> achieves state-of-the-art performance, 
+                        significantly advancing the frontier of visual-spatial intelligence.
+                        </p>
+                    </div>
+                    <div class="image-container">
+                        <img src="static/images/vsibench.png"  alt="table1" class="full-width-image">
+                    </div>
+                </div>
+            </div>
+        </div><br>
+    </section>
+
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Analysis on Long-Horizon Reasoning Abilities.</h2>
+                    <div class="content has-text-justified">         
+                      <p>
+                        To evaluate the long-horizon spatial reasoning ability of the models, 
+                        we partition the input videos in VSI-Bench and VSTI-Bench into 
+                        three groups based on their duration: Short (&lt;1 min), Mid (1-2 min), and Long (&gt;2 min).
+                        Across all horizons, our VLM<sup>2</sup> maintains consistently superior accuracy on both benchmarks.
+                        This demonstrates that our view-consistent 3D-aware representation and dual-memory design 
+                        effectively preserve spatial understanding over long horizons, highlighting the importance of 
+                        persistent memory for long-horizon spatial reasoning.
+                      </p>
+                    </div>
+                    <div class="columns is-centered">
+                        <div class="column is-half">
+                            <img src="static/images/long_horizon_vsi.svg" alt="long_horizon_vsi" class="full-width-image">
+                            <figcaption style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                                Figure 1. VSI-Bench long-horizon performance.
+                            </figcaption>
+                        </div>
+                        <div class="column is-half">
+                            <img src="static/images/long_horizon_vsti.svg" alt="long_horizon_vsti" class="full-width-image">
+                            <figcaption style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                                Figure 2. VSTI-Bench long-horizon performance.
+                            </figcaption>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><br>
+    </section>
+
+<section class="section" id="demo">
+    <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+        <div class="column is-five-fifths">
+            <h2 class="title is-3 demo-title">
+            <img id="demo_icon" src="static/images/test.png" alt="Demo Icon"> 
+            Try It Yourself: Spatial Reasoning Examples
+            </h2> 
+        <p class="subtitle is-5">Try answering these spatial reasoning questions using real benchmark videos.</p>
+      </div>
+      
+    </div>
+
+    <!-- Category Selection -->
+    <div class="columns is-centered has-text-centered" style="margin-bottom: 2rem;">
+      <div class="column is-four-fifths">
+        <div class="tabs is-centered is-large is-boxed">
+          <ul>
+            <li class="tab-link is-active" data-category="VSI-Bench">
+              <a><strong>VSI-Bench</strong></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- Demo Content -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-six-fifths">
+        <div class="box">
+          <!-- Question Navigation -->
+          <div class="level" style="margin-bottom: 1rem;">
+            <div class="level-left">
+              <div class="level-item">
+                <span class="tag is-info is-medium">
+                  <span id="current-question-info">Question 1 of 3</span>
+                </span>
+              </div>
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <div class="buttons">
+                  <button id="prev-question" class="button is-small" disabled>
+                    <span class="icon"><i class="fas fa-chevron-left"></i></span>
+                    <span>Previous</span>
+                  </button>
+                  <button id="next-question" class="button is-small">
+                    <span>Next</span>
+                    <span class="icon"><i class="fas fa-chevron-right"></i></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Video Player -->
+          <div class="video-wrapper">
+            <video id="demo-video" controls preload="metadata" playsinline onerror="handleVideoError(this)" onloadeddata="handleVideoLoaded(this)">
+                <source src="static/videos/scene0643_00.mp4" type="video/mp4">
+                <source src="static/videos/42897564.mp4" type="video/mp4">
+                <source src="static/videos/45663154.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+          </div>
+          
+          <!-- Question Content -->
+          <div style="margin-top: 2rem;">
+            <h3 id="question-text" class="title is-4" style="color: #363636;">Which direction is he running toward?</h3>
+            
+            <div class="buttons is-centered" style="margin-top: 1.5rem;" id="answer-buttons">
+              <!-- Answer buttons will be dynamically generated -->
+            </div>
+            
+            <!-- Feedback -->
+            <div id="demo-feedback" style="margin-top: 1rem; display: none;">
+              <div class="notification" id="feedback-message"></div>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div style="margin-top: 2rem;">
+              <div class="columns is-multiline is-centered">
+                <div class="column is-narrow">
+                  <span class="tag is-light">Score: <span id="score-display">0/0</span></span>
+                </div>
+                <div class="column is-narrow">
+                  <progress id="progress-bar" class="progress is-primary" value="0" max="100">0%</progress>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Qualitative Examples</h2>
+                    <div class="image-slider">
+                        <div class="slides-container">
+                            <div class="slide active" id="slide-0">
+                                <img src="static/images/example1.png" alt="Example 1" class="full-width-image">
+                            </div>
+                            <div class="slide" id="slide-1">
+                                <img src="static/images/example2.png" alt="Example 2" class="full-width-image">
+                            </div>
+                            <div class="slide" id="slide-2">
+                                <img src="static/images/example3.png" alt="Example 3" class="full-width-image">
+                            </div>
+                            <div class="slide" id="slide-3">
+                                <img src="static/images/example4.png" alt="Example 4" class="full-width-image">
+                            </div>
+                            <div class="slide" id="slide-4">
+                                <img src="static/images/example5.png" alt="Example 5" class="full-width-image">
+                            </div>
+                            <div class="slide" id="slide-5">
+                                <img src="static/images/example6.png" alt="Example 6" class="full-width-image">
+                            </div>
+                        </div>
+
+                        <div class="slider-controls">
+                            <button class="prev-button" onclick="prevSlide()">
+                                <i class="fas fa-chevron-left"></i> Prev
+                            </button>
+                            <button class="next-button" onclick="nextSlide()">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><br>
+    </section>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        if (totalSlides === 0) return;
+  
+        slides.forEach((s, i) => {
+        s.classList.toggle('active', i === 0);
+        });
+  
+        function showSlide(index) {
+            slides.forEach(slide => {
+                slide.style.zIndex = 1;
+                slide.classList.remove('active');
+                slide.style.opacity = 0;
+            });
+            slides[index].classList.add('active');
+            slides[index].style.zIndex = 2;
+            setTimeout(() => {
+                slides[index].style.opacity = 1;
+            }, 50);
+            currentSlide = index;
+        }
+  
+        window.nextSlide = function () {
+            let next = (currentSlide + 1) % totalSlides;
+            showSlide(next);
+        };
+
+        window.prevSlide = function () {
+            let prev = (currentSlide - 1 + totalSlides) % totalSlides;
+            showSlide(prev);
+        };
+  
+        let autoSlideInterval;
+        function startAutoSlide() {
+            autoSlideInterval = setInterval(nextSlide, 3000);
+        }
+  
+        function stopAutoSlide() {
+            clearInterval(autoSlideInterval);
+        }
+  
+        startAutoSlide();
+  
+        const slider = document.querySelector('.image-slider');
+
+        if (slider) {
+            slider.addEventListener('mouseover', stopAutoSlide);
+            slider.addEventListener('mouseout', startAutoSlide);
+        }
+    });
+    </script>
+
+
+<section class="section" id="BibTeX">
+    <div class="container is-max-desktop">
+        <div class="columns is-centered has-text-justified">
+            <div class="column is-four-fifths">
+                <h2 class="title">BibTeX</h2>
+                <pre><code>@article{liu2025vlm2,
+        title={Vision-Language Memory for Spatial Reasoning},
+        author={Liu, Zuntao and Du, Yi and Fu, Taimeng and Su, Shaoshu and Ho, Cherie and Wang, Chen},
+        booktitle={arXiv preprint arxiv:2511.xxxx},  
+        year={2025}
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-8">
+                <div class="content">
+                    <p>
+                        This website is adapted from <a rel="license"
+                        href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> and <a rel="license"
+                        href="https://vlm4d.github.io/">VLM4D</a>, licensed under a <a rel="license"
+                        href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+// Video error handling functions
+function handleVideoError(video) {
+    console.error('Video failed to load:', video.currentSrc);
+    const error = video.error;
+    if (error) {
+        console.error('Error code:', error.code);
+    }
+}
+
+function handleVideoLoaded(video) {
+    console.log('Video loaded successfully:', video.currentSrc);
+}
+
+// Demo interaction script with multiple questions
+document.addEventListener('DOMContentLoaded', function() {
+    // Question database
+    const questionDatabase = {
+        'VSI-Bench': [
+            {
+                video: 'static/videos/scene0643_00.mp4',
+                question: 'Measuring from the closest point of each object, which of these objects (chair, door, table, window) is the closest to the telephone?',
+                options: ['A: chair', 'B: door', 'C: window', 'D: table'],
+                correct: 'D',
+                explanation: 'The Ground Truth answer is table.'
+            },
+            {
+                video: 'static/videos/scene0643_00.mp4',
+                question: 'If I am standing by the bookshelf and facing the door, is the keyboard to my front-left, front-right, back-left, or back-right? ',
+                options: ['A: front-right', 'B: front-left', 'C: back-left', 'D: back-right'],
+                correct: 'B',
+                explanation: 'The Ground Truth answer is front-left.'
+            },
+            {
+                video: 'static/videos/42897564.mp4',
+                question: 'How many chair(s) are in this room?',
+                options: ['A: 5', 'B: 6', 'C: 7', 'D:8'],
+                correct: 'C',
+                explanation: 'The Ground Truth answer is 7 chairs.'
+            },
+            {
+                video: 'static/videos/45663154.mp4',
+                question: 'What is the length of the longest dimension (length, width, or height) of the fireplace, measured in centimeters?',
+                options: ['A: 8', 'B: 81', 'C: 181', 'D:1810'],
+                correct: 'C',
+                explanation: 'The Ground Truth answer is 181 centimeters.'
+            }
+        ]
+    };
+
+    // State management
+    let currentCategory = 'VSI-Bench';
+    let currentQuestionIndex = 0;
+    let userAnswers = {};
+    let totalScore = 0;
+
+    // DOM elements
+    const tabLinks = document.querySelectorAll('.tab-link');
+    const videoElement = document.getElementById('demo-video');
+    const questionText = document.getElementById('question-text');
+    const answerButtonsContainer = document.getElementById('answer-buttons');
+    const feedbackDiv = document.getElementById('demo-feedback');
+    const feedbackMessage = document.getElementById('feedback-message');
+    const prevButton = document.getElementById('prev-question');
+    const nextButton = document.getElementById('next-question');
+    const currentQuestionInfo = document.getElementById('current-question-info');
+    const scoreDisplay = document.getElementById('score-display');
+    const progressBar = document.getElementById('progress-bar');
+
+    // Initialize
+    function init() {
+        initializeUserAnswers();
+        setupTabListeners();
+        setupNavigationListeners();
+        loadQuestion();
+        updateUI();
+    }
+
+    function initializeUserAnswers() {
+        Object.keys(questionDatabase).forEach(category => {
+            userAnswers[category] = new Array(questionDatabase[category].length).fill(null);
+        });
+    }
+
+    function setupTabListeners() {
+        tabLinks.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                const newCategory = this.getAttribute('data-category');
+                if (newCategory !== currentCategory) {
+                    switchCategory(newCategory);
+                }
+            });
+        });
+    }
+
+    function setupNavigationListeners() {
+        prevButton.addEventListener('click', function() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+                updateUI();
+            }
+        });
+
+        nextButton.addEventListener('click', function() {
+            const maxIndex = questionDatabase[currentCategory].length - 1;
+            if (currentQuestionIndex < maxIndex) {
+                currentQuestionIndex++;
+                loadQuestion();
+                updateUI();
+            }
+        });
+    }
+
+    function switchCategory(newCategory) {
+        currentCategory = newCategory;
+        currentQuestionIndex = 0;
+        
+        // Update tab appearance
+        tabLinks.forEach(tab => {
+            tab.classList.remove('is-active');
+            if (tab.getAttribute('data-category') === newCategory) {
+                tab.classList.add('is-active');
+            }
+        });
+
+        loadQuestion();
+        updateUI();
+        hideFeedback();
+    }
+
+    function loadQuestion() {
+        const currentQuestion = questionDatabase[currentCategory][currentQuestionIndex];
+        
+        // Update video source
+        const sources = videoElement.querySelectorAll('source');
+        sources.forEach(source => {
+            source.src = currentQuestion.video;
+        });
+        
+        // Force video reload
+        videoElement.load();
+
+        // Update question text
+        questionText.textContent = currentQuestion.question;
+
+        // Create answer buttons
+        createAnswerButtons(currentQuestion.options, currentQuestion.correct);
+    }
+
+    function createAnswerButtons(options, correctAnswer) {
+        answerButtonsContainer.innerHTML = '';
+        
+        options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.className = 'button is-medium demo-option';
+            button.style.margin = '0.5rem';
+            button.innerHTML = `<strong>${option}</strong>`;
+            
+            const optionLetter = option.charAt(0);
+            button.setAttribute('data-answer', optionLetter);
+            
+            // Check if this question was already answered
+            const userAnswer = userAnswers[currentCategory][currentQuestionIndex];
+            if (userAnswer) {
+                if (userAnswer === optionLetter) {
+                    if (userAnswer === correctAnswer) {
+                        button.classList.add('is-success');
+                    } else {
+                        button.classList.add('is-danger');
+                    }
+                }
+                if (optionLetter === correctAnswer && userAnswer !== correctAnswer) {
+                    button.classList.add('is-success');
+                }
+                button.disabled = true;
+            }
+
+            button.addEventListener('click', function() {
+                handleAnswerSelection(optionLetter, correctAnswer);
+            });
+
+            answerButtonsContainer.appendChild(button);
+        });
+    }
+
+    function handleAnswerSelection(selectedAnswer, correctAnswer) {
+        const currentQuestion = questionDatabase[currentCategory][currentQuestionIndex];
+        
+        // Store user answer
+        userAnswers[currentCategory][currentQuestionIndex] = selectedAnswer;
+
+        // Update button states
+        const buttons = answerButtonsContainer.querySelectorAll('.demo-option');
+        buttons.forEach(button => {
+            const buttonAnswer = button.getAttribute('data-answer');
+            button.classList.remove('is-light');
+            
+            if (buttonAnswer === selectedAnswer) {
+                if (selectedAnswer === correctAnswer) {
+                    button.classList.add('is-success', 'correct');
+                } else {
+                    button.classList.add('is-danger', 'incorrect');
+                }
+            }
+            
+            if (buttonAnswer === correctAnswer && selectedAnswer !== correctAnswer) {
+                button.classList.add('is-success');
+            }
+            
+            button.disabled = true;
+        });
+
+        // Show feedback
+        showFeedback(selectedAnswer === correctAnswer, currentQuestion.explanation);
+        
+        // Update score and progress
+        updateScore();
+        updateUI();
+    }
+
+    function showFeedback(isCorrect, explanation) {
+        feedbackDiv.style.display = 'block';
+        
+        if (isCorrect) {
+            feedbackMessage.className = 'notification is-success';
+            feedbackMessage.innerHTML = `<strong>Correct!</strong> ${explanation}`;
+        } else {
+            feedbackMessage.className = 'notification is-warning';
+            feedbackMessage.innerHTML = `<strong>Incorrect.</strong> ${explanation}`;
+        }
+    }
+
+    function hideFeedback() {
+        feedbackDiv.style.display = 'none';
+    }
+
+    function updateScore() {
+        let correct = 0;
+        let total = 0;
+        
+        Object.keys(userAnswers).forEach(category => {
+            userAnswers[category].forEach((answer, index) => {
+                if (answer !== null) {
+                    total++;
+                    if (answer === questionDatabase[category][index].correct) {
+                        correct++;
+                    }
+                }
+            });
+        });
+        
+        totalScore = correct;
+        scoreDisplay.textContent = `${correct}/${total}`;
+    }
+
+    function updateUI() {
+        const maxIndex = questionDatabase[currentCategory].length - 1;
+        const totalQuestions = questionDatabase[currentCategory].length;
+        
+        // Update question info
+        currentQuestionInfo.textContent = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
+        
+        // Update navigation buttons
+        prevButton.disabled = currentQuestionIndex === 0;
+        nextButton.disabled = currentQuestionIndex === maxIndex;
+        
+        // Update progress bar
+        const answeredInCategory = userAnswers[currentCategory].filter(answer => answer !== null).length;
+        const progressPercentage = (answeredInCategory / totalQuestions) * 100;
+        progressBar.value = progressPercentage;
+    }
+
+    // Initialize the demo
+    init();
+});
+</script>
+
+</body>
+</html>
