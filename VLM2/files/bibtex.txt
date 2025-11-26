@@ -1,6 +1,6 @@
 @article{liu2025vlm2,
   title = {Vision-Language Memory for Spatial Reasoning},
   author = {Liu, Zuntao and Du, Yi and Fu, Taimeng and Su, Shaoshu and Ho, Cherie and Wang, Chen},
-  booktitle={arXiv preprint arxiv:2511.xxxx},  
+  booktitle={arXiv preprint arxiv:2511.20644},  
   year = {2025}
 }
