@@ -185,6 +185,15 @@ em {
   color: var(--btn-text-hover);
 }
 
+.email-display {
+  display: inline-block;
+  padding: 5px 16px;
+  margin: 4px 6px;
+  font-size: 15px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
 /* ===== Section Heading ===== */
 
 .section-heading {
